@@ -216,15 +216,28 @@
         let currentQuestionsList = [...dynamicExamDatabase];
         let sessionMistakes = [];
         let sessionScore = 0;
+        let availableSystemVoices = [];
 
         // Initialize engine on page load
         function initializeExamEngine() {
             document.getElementById('tab-daily').addEventListener('click', function() { toggleAppMode(false); });
             document.getElementById('tab-cram').addEventListener('click', function() { toggleAppMode(true); });
             
+            // Prime system voice registry caches cleanly right at software startup boundaries
+            cacheSystemVoices();
+            if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = cacheSystemVoices;
+            }
+
             // Render initial state
             updateDashboardCounters();
             loadActiveQuestionChallenge();
+        }
+
+        // Cache voices utility function
+        function cacheSystemVoices() {
+            if (typeof speechSynthesis === 'undefined') return;
+            availableSystemVoices = window.speechSynthesis.getVoices();
         }
 
         // Toggles mode and handles sorting/shuffling
@@ -261,43 +274,33 @@
             localStorage.setItem('ags_readiness', examReadinessPercentage);
         }
 
-        // Warm up speech synthesis voices list for browser engines
-        if (window.speechSynthesis) {
-            window.speechSynthesis.getVoices();
-            if (typeof window.speechSynthesis.addEventListener === 'function') {
-                window.speechSynthesis.addEventListener('voiceschanged', () => {
-                    window.speechSynthesis.getVoices();
-                });
-            }
-        }
-
-        // Native Text to Speech Call Pipeline with Premium Neural Voice Filtering
+        // Native Text to Speech Call Pipeline with high quality asynchronous selection filters
         window.speakSpanishText = function(textString) {
-            // Cancel overlapping utterances immediately if user double-clicks or spams the button
+            if (typeof speechSynthesis === 'undefined') return;
+            
+            // Cancel overlapping utterances if the user triggers the button repeatedly
             window.speechSynthesis.cancel();
             
             const utterance = new SpeechSynthesisUtterance(textString);
-            utterance.lang = 'es-ES'; // Direct language anchor setting for standard Castilian pronunciation
-            utterance.rate = 0.85;    // Slightly modulated speed for clarity mapping
             
-            if (window.speechSynthesis) {
-                const voices = window.speechSynthesis.getVoices();
-                // Filter voices matching Spanish language prefix 'es'
-                const spanishVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
-                
-                // Advanced scanner searching for Google, Natural, or Premium neural voices
-                const bestVoice = spanishVoices.find(v => {
-                    const name = v.name.toLowerCase();
-                    return name.includes('google') || name.includes('natural') || name.includes('premium');
-                });
-                
-                if (bestVoice) {
-                    utterance.voice = bestVoice;
-                } else if (spanishVoices.length > 0) {
-                    // Fall back to first available Spanish voice track
-                    utterance.voice = spanishVoices[0];
-                }
+            // Re-verify cached local voice registry array states
+            if (availableSystemVoices.length === 0) {
+                availableSystemVoices = window.speechSynthesis.getVoices();
             }
+
+            // High-yield neural voice picking loop
+            const premiumVoice = availableSystemVoices.find(voice => 
+                voice.lang.startsWith('es') && 
+                (voice.name.includes('Google') || voice.name.includes('Natural') || voice.name.includes('Premium'))
+            ) || availableSystemVoices.find(voice => voice.lang.startsWith('es'));
+
+            if (premiumVoice) {
+                utterance.voice = premiumVoice;
+            }
+            
+            utterance.lang = 'es-ES'; // Direct language anchor setting for standard Castilian pronunciation
+            utterance.rate = 0.88;    // Slightly modulated speed for flawless auditory tracking practice
+            utterance.pitch = 1.0;
             
             window.speechSynthesis.speak(utterance);
         };
