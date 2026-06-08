@@ -101,30 +101,35 @@
                 type: "TIME TRANSCRIPTION",
                 prompt: "Listen/Read: <em>'Son las cinco menos veinticinco.'</em> Convert to numerical format using standard digits:",
                 answer: "4:35",
+                speechText: "Son las cinco menos veinticinco.",
                 hint: "Subtract veinticinco (25) minutes from five (5:00), yielding 4:35. In Spanish subtractive time, subtract minutes from the upcoming hour using menos!"
             },
             {
                 type: "TIME TRANSCRIPTION",
                 prompt: "Listen/Read: <em>'Son las dos menos veinte.'</em> Convert to numerical digits layout:",
                 answer: "1:40",
+                speechText: "Son las dos menos veinte.",
                 hint: "Subtract twenty minutes (veinte) directly from the target two o'clock baseline boundary (2:00 minus 20 mins = 1:40)."
             },
             {
                 type: "TIME TRANSCRIPTION",
                 prompt: "Listen/Read: <em>'La una menos veinte.'</em> Convert to numerical digits format:",
                 answer: "12:40",
+                speechText: "La una menos veinte.",
                 hint: "Subtract twenty minutes from the single hour limit mark (1:00 minus 20 mins = 12:40). Use 'la una' because hour 1 is singular."
             },
             {
                 type: "VERB CONJUGATION MATRIX",
                 prompt: "Conjugate the root: Nosotros (<strong>preferir</strong>) ____________________ clases de música.",
                 answer: "preferimos",
+                speechText: "Nosotros preferimos clases de música.",
                 hint: "Stem mutation check: preferir is a radical stem-changer (e->ie), BUT it retains regular suffixes inside the nosotros context! (Yo prefiero, Nosotros preferimos)."
             },
             {
                 type: "VERB CONJUGATION MATRIX",
                 prompt: "Conjugate the root: Vosotros (<strong>ser</strong>) ____________________ alumnos muy serios.",
                 answer: "sois",
+                speechText: "Vosotros sois serios.",
                 hint: "Review your irregular present indicative plural paradigms carefully. Ser conjugation for vosotros is 'sois' (no accent)."
             },
             {
@@ -132,6 +137,7 @@
                 prompt: "Reconstruct proper syntax order: <br><span class='text-indigo-300 font-mono text-xs md:text-sm'>difícil. / El / muy / es / inglés</span>",
                 answer: "El inglés es muy difícil.",
                 tokens: ["difícil.", "El", "muy", "es", "inglés"],
+                speechText: "El inglés es muy difícil.",
                 hint: "Adjectives must follow nouns directly while active predicates sit securely behind the primary subjects. Remember the capital letter 'El' starts the sentence."
             },
             {
@@ -139,54 +145,63 @@
                 prompt: "Reconstruct proper syntax order: <br><span class='text-indigo-300 font-mono text-xs md:text-sm'>profesor / de / fantástico. / Mi / español / es</span>",
                 answer: "Mi profesor de español es fantástico.",
                 tokens: ["profesor", "de", "fantástico.", "Mi", "español", "es"],
+                speechText: "Mi profesor de español es fantástico.",
                 hint: "Noun descriptors use 'de' modifiers: 'Mi profesor de español'. Place the capital word 'Mi' at the front."
             },
             {
                 type: "PREPOSITION DESTINATION",
                 prompt: "Fill with correct preposition (a, al, a la, a los, a las): <br><strong>'Me gusta ir ________ supermercado.'</strong>",
                 answer: "al",
+                speechText: "Me gusta ir al supermercado.",
                 hint: "Movement contraction rule: combining preposition 'a' + masculine article 'el' produces a mandatory unified contraction 'al'."
             },
             {
                 type: "PREPOSITION DESTINATION",
                 prompt: "Fill with correct preposition (a, al, a la, a los, a las): <br><strong>'Se puede ir ________ piscina.'</strong>",
                 answer: "a la",
+                speechText: "Se puede ir a la piscina.",
                 hint: "Keep standard article parameters matching feminine nouns directly without changes. 'La piscina' is feminine singular."
             },
             {
                 type: "PREPOSITION DESTINATION",
                 prompt: "Fill with correct preposition (a, al, a la, a los, a las): <br><strong>'Me gustaría ir ________ tiendas.'</strong>",
                 answer: "a las",
+                speechText: "Me gustaría ir a las tiendas.",
                 hint: "Ensure plural indicators mirror feminine values cleanly: 'a las tiendas'."
             },
             {
                 type: "ADJECTIVE AGREEMENT PASSAGE",
                 prompt: "Apply correct ending parameters: <br><strong>'Tengo una profesora (divertido) ____________________ de español.'</strong>",
                 answer: "divertida",
+                speechText: "Tengo una profesora divertida de español.",
                 hint: "Adjectives must mirror gender limits matching the singular noun. 'Profesora' is feminine singular, so 'divertido' becomes 'divertida'."
             },
             {
                 type: "ADJECTIVE AGREEMENT PASSAGE",
                 prompt: "Apply correct ending parameters: <br><strong>'Tengo unas amigas (gracioso) ____________________.'</strong>",
                 answer: "graciosas",
+                speechText: "Tengo unas amigas graciosas.",
                 hint: "Ensure the adjective ends with standard plural attachments matching your target noun parameters. 'Amigas' is feminine plural, so 'gracioso' becomes 'graciosas'."
             },
             {
                 type: "COORDINATE LAYOUT POSITION",
                 prompt: "Translate the compass position: <br><strong>'Spencer lives in the southeast of Auckland.'</strong> (Spencer vive en el ____________________ de Auckland.)",
                 answer: "sureste",
-                hint: "Compass directions in Spanish: norte (north), sur (south), este (east), oeste (west). Southeast combines sur and este to form 'sureste' [cite: 2, 13]."
+                speechText: "Spencer vive en el sureste de Auckland.",
+                hint: "Compass directions in Spanish: norte (north), sur (south), este (east), oeste (west). Southeast combines sur and este to form 'sureste'."
             },
             {
                 type: "EXAM-STYLE WRITING PREP",
                 prompt: "Translate the high-frequency phrase block: <br><strong>'My identical twin brother is very hardworking.'</strong>",
                 answer: "Mi hermano gemelo es muy trabajador.",
+                speechText: "Mi hermano gemelo es muy trabajador.",
                 hint: "Check family traits and character assignments. 'Hermano gemelo' (twin brother) and 'trabajador' (hardworking, masculine singular) must agree."
             },
             {
                 type: "EXAM-STYLE WRITING PREP",
                 prompt: "Translate the required introductory profile line: <br><strong>'My name is Mateo and I am fourteen years old.'</strong>",
                 answer: "Me llamo Mateo y tengo catorce años.",
+                speechText: "Me llamo Mateo y tengo catorce años.",
                 hint: "Use reflexive verb 'llamarse' for identity ('Me llamo') and verb 'tener' for tracking age timeline parameters ('tengo catorce años')."
             }
         ];
@@ -246,6 +261,17 @@
             localStorage.setItem('ags_readiness', examReadinessPercentage);
         }
 
+        // Native Text to Speech Call Pipeline
+        window.speakSpanishText = function(textString) {
+            // Cancel overlapping utterances immediately if user double-clicks or spams the button
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(textString);
+            utterance.lang = 'es-ES'; // Direct language anchor setting for standard Castilian pronunciation
+            utterance.rate = 0.85;    // Slightly modulated speed for clarity mapping
+            window.speechSynthesis.speak(utterance);
+        };
+
         // Render current challenge items accurately into the viewport DOM area
         function loadActiveQuestionChallenge() {
             if (currentQuestionIndex >= currentQuestionsList.length) {
@@ -268,10 +294,20 @@
             const workspace = document.getElementById('dynamic-prompt-injector');
             workspace.innerHTML = "";
 
-            // Create Prompt Container
+            // Create Prompt Container with TTS Button
             const promptBox = document.createElement('div');
-            promptBox.className = "text-sm md:text-base text-slate-100 font-medium leading-relaxed bg-slate-900/40 p-4 rounded-xl border border-white/5";
-            promptBox.innerHTML = currentItem.prompt;
+            promptBox.className = "text-sm md:text-base text-slate-100 font-medium leading-relaxed bg-slate-900/40 p-4 rounded-xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4";
+            
+            // Clean single quote escaping for inline attribute
+            const escapedSpeech = currentItem.speechText.replace(/'/g, "\\'");
+            
+            promptBox.innerHTML = `
+                <span class="flex-1">${currentItem.prompt}</span>
+                <button onclick="speakSpanishText('${escapedSpeech}')" 
+                    class="bg-[#1E293B] hover:bg-[#28354f] border border-slate-800 hover:border-[#5346E0] text-indigo-300 font-bold transition-all text-xs py-2 px-3.5 rounded-lg flex items-center gap-2 cursor-pointer shrink-0 shadow active:scale-95">
+                    🔊 Listen in Spanish
+                </button>
+            `;
             workspace.appendChild(promptBox);
 
             // Container for input and controls
