@@ -261,7 +261,17 @@
             localStorage.setItem('ags_readiness', examReadinessPercentage);
         }
 
-        // Native Text to Speech Call Pipeline
+        // Warm up speech synthesis voices list for browser engines
+        if (window.speechSynthesis) {
+            window.speechSynthesis.getVoices();
+            if (typeof window.speechSynthesis.addEventListener === 'function') {
+                window.speechSynthesis.addEventListener('voiceschanged', () => {
+                    window.speechSynthesis.getVoices();
+                });
+            }
+        }
+
+        // Native Text to Speech Call Pipeline with Premium Neural Voice Filtering
         window.speakSpanishText = function(textString) {
             // Cancel overlapping utterances immediately if user double-clicks or spams the button
             window.speechSynthesis.cancel();
@@ -269,6 +279,26 @@
             const utterance = new SpeechSynthesisUtterance(textString);
             utterance.lang = 'es-ES'; // Direct language anchor setting for standard Castilian pronunciation
             utterance.rate = 0.85;    // Slightly modulated speed for clarity mapping
+            
+            if (window.speechSynthesis) {
+                const voices = window.speechSynthesis.getVoices();
+                // Filter voices matching Spanish language prefix 'es'
+                const spanishVoices = voices.filter(v => v.lang.toLowerCase().startsWith('es'));
+                
+                // Advanced scanner searching for Google, Natural, or Premium neural voices
+                const bestVoice = spanishVoices.find(v => {
+                    const name = v.name.toLowerCase();
+                    return name.includes('google') || name.includes('natural') || name.includes('premium');
+                });
+                
+                if (bestVoice) {
+                    utterance.voice = bestVoice;
+                } else if (spanishVoices.length > 0) {
+                    // Fall back to first available Spanish voice track
+                    utterance.voice = spanishVoices[0];
+                }
+            }
+            
             window.speechSynthesis.speak(utterance);
         };
 
