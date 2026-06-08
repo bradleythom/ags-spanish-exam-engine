@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>¡Aprobar! - The AGS Form 3 Term 2 Spanish Exam Engine</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body {
+            background-color: #090D16;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .app-bg { background-color: #090D16; }
+        .card-bg { background-color: #111726; }
+        .accent-purple { background-color: #5346E0; }
+        .accent-purple-hover:hover { background-color: #4336CA; }
+        .border-slate-custom { border-color: rgba(255, 255, 255, 0.08); }
+        
+        /* Custom dynamic styles */
+        .ring-animation {
+            transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Glassmorphism utility */
+        .glass-card {
+            background: rgba(17, 23, 38, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen p-3 md:p-8 flex justify-center items-top select-none">
+
+    <div class="w-full max-w-2xl mx-auto space-y-5">
+        
+        <!-- Header area containing Streak and predicted readiness score -->
+        <div class="flex justify-between items-center w-full">
+            <div>
+                <p class="text-slate-500 font-bold tracking-wider text-[10px] md:text-xs uppercase">Spencer's Study App</p>
+                <h1 class="text-2xl md:text-3xl font-black text-indigo-400 tracking-tight">¡Aprobar!</h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Streak Widget -->
+                <div class="flex items-center gap-2 bg-slate-900/60 px-3 py-1.5 rounded-xl border border-white/5 shadow-md" title="Current Daily Streak">
+                    <span class="text-lg">🔥</span>
+                    <span id="streak-counter" class="font-black text-orange-400 text-sm md:text-base">0</span>
+                </div>
+                
+                <!-- Readiness Widget -->
+                <div class="flex items-center gap-2 bg-slate-900/60 px-3 py-1.5 rounded-xl border border-white/5 shadow-md" title="Predicted Exam Readiness Score">
+                    <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase">READY:</span>
+                    <div class="relative flex items-center justify-center">
+                        <span id="readiness-meter" class="font-black text-sm md:text-base text-indigo-400">50%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mode selector switcher tab bar -->
+        <div class="grid grid-cols-2 p-1 bg-slate-950/80 rounded-2xl border border-white/5">
+            <button id="tab-daily" class="py-2.5 text-center text-xs md:text-sm font-bold rounded-xl accent-purple text-white transition-all shadow-lg cursor-pointer">
+                Daily Revision
+            </button>
+            <button id="tab-cram" class="py-2.5 text-center text-xs md:text-sm font-bold rounded-xl text-slate-400 hover:text-slate-200 transition-all cursor-pointer">
+                Exam-Cram
+            </button>
+        </div>
+
+        <!-- Main Challenge Viewport Card container -->
+        <div class="glass-card rounded-2xl p-5 md:p-6 shadow-2xl space-y-5 relative overflow-hidden">
+            
+            <!-- Progress Line Indicator -->
+            <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
+                <div id="session-progress-bar" class="h-full accent-purple w-0 transition-all duration-300"></div>
+            </div>
+
+            <!-- Card Subheader -->
+            <div class="flex justify-between items-center border-b border-white/5 pb-3">
+                <span id="question-type-label" class="text-[10px] font-black tracking-widest text-indigo-400 uppercase">LOADING...</span>
+                <span id="question-index-label" class="text-[10px] font-bold tracking-wider text-slate-500">Q: 1/15</span>
+            </div>
+
+            <!-- Dynamic Question Prompts and Controls View -->
+            <div id="dynamic-prompt-injector" class="space-y-5">
+                <!-- Initial loading space -->
+            </div>
+
+            <!-- Instant Feedback Overlay HUD -->
+            <div id="feedback-hud" class="hidden p-4 rounded-xl font-semibold text-sm transition-all border">
+                <!-- Correct / Incorrect alert info -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Authentic AGS Form 3 Term 2 Database arrays extracted directly from historical testing metrics
+        const dynamicExamDatabase = [
+            {
+                type: "TIME TRANSCRIPTION",
+                prompt: "Listen/Read: <em>'Son las cinco menos veinticinco.'</em> Convert to numerical format using standard digits:",
+                answer: "4:35",
+                hint: "Subtract veinticinco (25) minutes from five (5:00), yielding 4:35. In Spanish subtractive time, subtract minutes from the upcoming hour using menos!"
+            },
+            {
+                type: "TIME TRANSCRIPTION",
+                prompt: "Listen/Read: <em>'Son las dos menos veinte.'</em> Convert to numerical digits layout:",
+                answer: "1:40",
+                hint: "Subtract twenty minutes (veinte) directly from the target two o'clock baseline boundary (2:00 minus 20 mins = 1:40)."
+            },
+            {
+                type: "TIME TRANSCRIPTION",
+                prompt: "Listen/Read: <em>'La una menos veinte.'</em> Convert to numerical digits format:",
+                answer: "12:40",
+                hint: "Subtract twenty minutes from the single hour limit mark (1:00 minus 20 mins = 12:40). Use 'la una' because hour 1 is singular."
+            },
+            {
+                type: "VERB CONJUGATION MATRIX",
+                prompt: "Conjugate the root: Nosotros (<strong>preferir</strong>) ____________________ clases de música.",
+                answer: "preferimos",
+                hint: "Stem mutation check: preferir is a radical stem-changer (e->ie), BUT it retains regular suffixes inside the nosotros context! (Yo prefiero, Nosotros preferimos)."
+            },
+            {
+                type: "VERB CONJUGATION MATRIX",
+                prompt: "Conjugate the root: Vosotros (<strong>ser</strong>) ____________________ alumnos muy serios.",
+                answer: "sois",
+                hint: "Review your irregular present indicative plural paradigms carefully. Ser conjugation for vosotros is 'sois' (no accent)."
+            },
+            {
+                type: "SENTENCE UNSCRAMBLE",
+                prompt: "Reconstruct proper syntax order: <br><span class='text-indigo-300 font-mono text-xs md:text-sm'>difícil. / El / muy / es / inglés</span>",
+                answer: "El inglés es muy difícil.",
+                tokens: ["difícil.", "El", "muy", "es", "inglés"],
+                hint: "Adjectives must follow nouns directly while active predicates sit securely behind the primary subjects. Remember the capital letter 'El' starts the sentence."
+            },
+            {
+                type: "SENTENCE UNSCRAMBLE",
+                prompt: "Reconstruct proper syntax order: <br><span class='text-indigo-300 font-mono text-xs md:text-sm'>profesor / de / fantástico. / Mi / español / es</span>",
+                answer: "Mi profesor de español es fantástico.",
+                tokens: ["profesor", "de", "fantástico.", "Mi", "español", "es"],
+                hint: "Noun descriptors use 'de' modifiers: 'Mi profesor de español'. Place the capital word 'Mi' at the front."
+            },
+            {
+                type: "PREPOSITION DESTINATION",
+                prompt: "Fill with correct preposition (a, al, a la, a los, a las): <br><strong>'Me gusta ir ________ supermercado.'</strong>",
+                answer: "al",
+                hint: "Movement contraction rule: combining preposition 'a' + masculine article 'el' produces a mandatory unified contraction 'al'."
+            },
+            {
+                type: "PREPOSITION DESTINATION",
+                prompt: "Fill with correct preposition (a, al, a la, a los, a las): <br><strong>'Se puede ir ________ piscina.'</strong>",
+                answer: "a la",
+                hint: "Keep standard article parameters matching feminine nouns directly without changes. 'La piscina' is feminine singular."
+            },
+            {
+                type: "PREPOSITION DESTINATION",
+                prompt: "Fill with correct preposition (a, al, a la, a los, a las): <br><strong>'Me gustaría ir ________ tiendas.'</strong>",
+                answer: "a las",
+                hint: "Ensure plural indicators mirror feminine values cleanly: 'a las tiendas'."
+            },
+            {
+                type: "ADJECTIVE AGREEMENT PASSAGE",
+                prompt: "Apply correct ending parameters: <br><strong>'Tengo una profesora (divertido) ____________________ de español.'</strong>",
+                answer: "divertida",
+                hint: "Adjectives must mirror gender limits matching the singular noun. 'Profesora' is feminine singular, so 'divertido' becomes 'divertida'."
+            },
+            {
+                type: "ADJECTIVE AGREEMENT PASSAGE",
+                prompt: "Apply correct ending parameters: <br><strong>'Tengo unas amigas (gracioso) ____________________.'</strong>",
+                answer: "graciosas",
+                hint: "Ensure the adjective ends with standard plural attachments matching your target noun parameters. 'Amigas' is feminine plural, so 'gracioso' becomes 'graciosas'."
+            },
+            {
+                type: "COORDINATE LAYOUT POSITION",
+                prompt: "Translate the compass position: <br><strong>'Spencer lives in the southeast of Auckland.'</strong> (Spencer vive en el ____________________ de Auckland.)",
+                answer: "sureste",
+                hint: "Compass directions in Spanish: norte (north), sur (south), este (east), oeste (west). Southeast combines sur and este to form 'sureste' [cite: 2, 13]."
+            },
+            {
+                type: "EXAM-STYLE WRITING PREP",
+                prompt: "Translate the high-frequency phrase block: <br><strong>'My identical twin brother is very hardworking.'</strong>",
+                answer: "Mi hermano gemelo es muy trabajador.",
+                hint: "Check family traits and character assignments. 'Hermano gemelo' (twin brother) and 'trabajador' (hardworking, masculine singular) must agree."
+            },
+            {
+                type: "EXAM-STYLE WRITING PREP",
+                prompt: "Translate the required introductory profile line: <br><strong>'My name is Mateo and I am fourteen years old.'</strong>",
+                answer: "Me llamo Mateo y tengo catorce años.",
+                hint: "Use reflexive verb 'llamarse' for identity ('Me llamo') and verb 'tener' for tracking age timeline parameters ('tengo catorce años')."
+            }
+        ];
+
+        // Active State Tracking Variables
+        let currentQuestionIndex = 0;
+        let examReadinessPercentage = parseInt(localStorage.getItem('ags_readiness') || '50', 10);
+        let currentUserStreak = parseInt(localStorage.getItem('ags_streak') || '0', 10);
+        let activeExamCramMode = false;
+        let selectedUnscrambleTokens = [];
+        let autoAdvanceTimer = null;
+        let currentQuestionsList = [...dynamicExamDatabase];
+        let sessionMistakes = [];
+        let sessionScore = 0;
+
+        // Initialize engine on page load
+        function initializeExamEngine() {
+            document.getElementById('tab-daily').addEventListener('click', function() { toggleAppMode(false); });
+            document.getElementById('tab-cram').addEventListener('click', function() { toggleAppMode(true); });
+            
+            // Render initial state
+            updateDashboardCounters();
+            loadActiveQuestionChallenge();
+        }
+
+        // Toggles mode and handles sorting/shuffling
+        function toggleAppMode(enableCramMode) {
+            activeExamCramMode = enableCramMode;
+            const dailyBtn = document.getElementById('tab-daily');
+            const cramBtn = document.getElementById('tab-cram');
+
+            clearTimeout(autoAdvanceTimer);
+
+            if (activeExamCramMode) {
+                cramBtn.className = "py-2.5 text-center text-xs md:text-sm font-bold rounded-xl accent-purple text-white transition-all shadow-lg cursor-pointer";
+                dailyBtn.className = "py-2.5 text-center text-xs md:text-sm font-bold rounded-xl text-slate-400 hover:text-slate-200 transition-all cursor-pointer";
+                // Shuffled clone for exam cram
+                currentQuestionsList = [...dynamicExamDatabase].sort(() => Math.random() - 0.5);
+            } else {
+                dailyBtn.className = "py-2.5 text-center text-xs md:text-sm font-bold rounded-xl accent-purple text-white transition-all shadow-lg cursor-pointer";
+                cramBtn.className = "py-2.5 text-center text-xs md:text-sm font-bold rounded-xl text-slate-400 hover:text-slate-200 transition-all cursor-pointer";
+                // Sequential default for revision
+                currentQuestionsList = [...dynamicExamDatabase];
+            }
+            
+            currentQuestionIndex = 0;
+            sessionMistakes = [];
+            sessionScore = 0;
+            loadActiveQuestionChallenge();
+        }
+
+        // Dashboard widgets synced to State
+        function updateDashboardCounters() {
+            document.getElementById('streak-counter').innerText = currentUserStreak;
+            document.getElementById('readiness-meter').innerText = `${examReadinessPercentage}%`;
+            localStorage.setItem('ags_streak', currentUserStreak);
+            localStorage.setItem('ags_readiness', examReadinessPercentage);
+        }
+
+        // Render current challenge items accurately into the viewport DOM area
+        function loadActiveQuestionChallenge() {
+            if (currentQuestionIndex >= currentQuestionsList.length) {
+                renderCompletionSummary();
+                return;
+            }
+
+            const currentItem = currentQuestionsList[currentQuestionIndex];
+            const hud = document.getElementById('feedback-hud');
+            hud.className = "hidden"; // Hide feedback panel on load
+
+            // Update subheader text
+            document.getElementById('question-type-label').innerText = currentItem.type;
+            document.getElementById('question-index-label').innerText = `Q: ${currentQuestionIndex + 1}/${currentQuestionsList.length}`;
+
+            // Update progress line bar width
+            const progressPercent = (currentQuestionIndex / currentQuestionsList.length) * 100;
+            document.getElementById('session-progress-bar').style.width = `${progressPercent}%`;
+
+            const workspace = document.getElementById('dynamic-prompt-injector');
+            workspace.innerHTML = "";
+
+            // Create Prompt Container
+            const promptBox = document.createElement('div');
+            promptBox.className = "text-sm md:text-base text-slate-100 font-medium leading-relaxed bg-slate-900/40 p-4 rounded-xl border border-white/5";
+            promptBox.innerHTML = currentItem.prompt;
+            workspace.appendChild(promptBox);
+
+            // Container for input and controls
+            const controlsBox = document.createElement('div');
+            controlsBox.className = "space-y-4";
+
+            // Conditional layout for UNSCRAMBLE vs text input challenges
+            if (currentItem.type === "SENTENCE UNSCRAMBLE") {
+                selectedUnscrambleTokens = [];
+                
+                // Construct tiles and slot layout
+                const builderDiv = document.createElement('div');
+                builderDiv.className = "space-y-3";
+                
+                // Target Answer display box
+                const answerSlot = document.createElement('div');
+                answerSlot.id = "unscramble-answer-slot";
+                answerSlot.className = "min-h-[50px] p-3 rounded-xl bg-slate-950 border border-dashed border-slate-700 flex flex-wrap gap-2 items-center text-slate-400 text-xs md:text-sm";
+                answerSlot.innerText = "Tap tiles below in correct syntax order...";
+                builderDiv.appendChild(answerSlot);
+
+                // Source Word Tiles box
+                const tilesTray = document.createElement('div');
+                tilesTray.className = "flex flex-wrap gap-2";
+                
+                // Shuffle tiles copy for display
+                const displayTokens = [...currentItem.tokens].sort(() => Math.random() - 0.5);
+                displayTokens.forEach((token, idx) => {
+                    const tile = document.createElement('button');
+                    tile.className = "px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs md:text-sm font-semibold transition-all cursor-pointer border border-white/5 active:scale-95";
+                    tile.innerText = token;
+                    tile.dataset.token = token;
+                    
+                    tile.onclick = function() {
+                        if (tile.classList.contains('opacity-25')) return; // Already tapped
+                        
+                        // Clear description placeholder
+                        if (selectedUnscrambleTokens.length === 0) {
+                            answerSlot.innerHTML = "";
+                        }
+
+                        // Add to assembly list
+                        selectedUnscrambleTokens.push(token);
+                        tile.classList.add('opacity-25', 'pointer-events-none');
+
+                        // Render slot block
+                        const block = document.createElement('span');
+                        block.className = "px-2 py-1 rounded bg-indigo-950/60 border border-indigo-800 text-indigo-200 font-semibold text-xs md:text-sm cursor-pointer hover:bg-rose-950/50 hover:border-rose-900 hover:text-rose-200 transition-all select-none";
+                        block.innerText = token;
+                        
+                        // Handle removal on click
+                        block.onclick = function() {
+                            block.remove();
+                            tile.classList.remove('opacity-25', 'pointer-events-none');
+                            selectedUnscrambleTokens = selectedUnscrambleTokens.filter(t => t !== token);
+                            if (selectedUnscrambleTokens.length === 0) {
+                                answerSlot.innerText = "Tap tiles below in correct syntax order...";
+                            }
+                        };
+                        answerSlot.appendChild(block);
+                    };
+                    tilesTray.appendChild(tile);
+                });
+                builderDiv.appendChild(tilesTray);
+                controlsBox.appendChild(builderDiv);
+            } else {
+                // Text input with accent utility keys
+                const inputWrapper = document.createElement('div');
+                inputWrapper.className = "relative";
+                
+                const inputField = document.createElement('input');
+                inputField.type = "text";
+                inputField.id = "active-user-entry";
+                inputField.className = "w-full p-3.5 card-bg border border-slate-700 rounded-xl text-white font-medium text-sm md:text-base placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all";
+                inputField.placeholder = "Type the precise translation/conjugation layout match string...";
+                inputField.autocomplete = "off";
+                inputField.spellcheck = false;
+                
+                // Capture enter press
+                inputField.onkeypress = function(e) {
+                    if (e.key === 'Enter') {
+                        checkUserSubmission();
+                    }
+                };
+                inputWrapper.appendChild(inputField);
+                controlsBox.appendChild(inputWrapper);
+
+                // Add Accent character buttons row underneath input
+                const accentRow = document.createElement('div');
+                accentRow.className = "flex gap-1.5 flex-wrap justify-start";
+                const accentsList = ['á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü'];
+                accentsList.forEach(char => {
+                    const btn = document.createElement('button');
+                    btn.className = "px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs md:text-sm font-bold border border-white/5 active:scale-95 cursor-pointer";
+                    btn.innerText = char;
+                    btn.onclick = function() {
+                        const start = inputField.selectionStart;
+                        const end = inputField.selectionEnd;
+                        const text = inputField.value;
+                        inputField.value = text.substring(0, start) + char + text.substring(end);
+                        inputField.focus();
+                        inputField.selectionStart = inputField.selectionEnd = start + char.length;
+                    };
+                    accentRow.appendChild(btn);
+                });
+                controlsBox.appendChild(accentRow);
+            }
+
+            // Verify action buttons row
+            const actionsRow = document.createElement('div');
+            actionsRow.className = "flex gap-2.5 pt-2";
+            
+            const submitBtn = document.createElement('button');
+            submitBtn.className = "flex-1 py-3.5 accent-purple hover:accent-purple-hover font-bold text-white text-sm md:text-base rounded-xl transition-all shadow-lg shadow-indigo-600/10 cursor-pointer text-center active:scale-95";
+            submitBtn.innerText = "Verify Exam Syntax";
+            submitBtn.onclick = checkUserSubmission;
+            actionsRow.appendChild(submitBtn);
+
+            controlsBox.appendChild(actionsRow);
+            workspace.appendChild(controlsBox);
+
+            // Focus field automatically
+            const activeInput = document.getElementById('active-user-entry');
+            if (activeInput) activeInput.focus();
+        }
+
+        // Process entry accuracy check strings safely via precise normalization filters
+        function checkUserSubmission() {
+            // Stop any pending timer
+            clearTimeout(autoAdvanceTimer);
+
+            const currentTarget = currentQuestionsList[currentQuestionIndex];
+            const hud = document.getElementById('feedback-hud');
+            let userString = "";
+
+            if (currentTarget.type === "SENTENCE UNSCRAMBLE") {
+                userString = selectedUnscrambleTokens.join(" ");
+            } else {
+                userString = document.getElementById('active-user-entry').value.trim();
+            }
+
+            // Normalize strings for comparison (case-insensitive, trim white spaces, ignore leading zeros for digit times)
+            const cleanUser = userString.toLowerCase().replace(/\s+/g, ' ').replace(/\.$/, '').trim();
+            const cleanTarget = currentTarget.answer.toLowerCase().replace(/\s+/g, ' ').replace(/\.$/, '').trim();
+            
+            const isCorrect = (cleanUser === cleanTarget);
+            hud.classList.remove('hidden');
+
+            if (isCorrect) {
+                hud.className = "p-4 rounded-xl font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-800/40 text-xs md:text-sm animate-pulse space-y-1";
+                hud.innerHTML = `
+                    <div class="flex items-center gap-2 text-sm">
+                        <span>🎯</span>
+                        <span>¡Excelente! Correct Answer Match. (+3 Readiness Points)</span>
+                    </div>
+                `;
+                
+                currentUserStreak++;
+                sessionScore++;
+                examReadinessPercentage = Math.min(examReadinessPercentage + 3, 100);
+            } else {
+                hud.className = "p-4 rounded-xl text-rose-400 bg-rose-950/30 border border-rose-800/40 text-xs md:text-sm space-y-2";
+                hud.innerHTML = `
+                    <div>
+                        <p class="font-black text-rose-300 flex items-center gap-2 text-sm">
+                            <span>❌</span>
+                            <span>Mechanics Error Detected (-2 Readiness Points)</span>
+                        </p>
+                    </div>
+                    <div class="text-[11px] md:text-xs text-slate-300 bg-slate-950/80 p-2.5 rounded-lg border border-white/5 space-y-1">
+                        <p>Your answer: <span class="font-mono text-rose-300 font-semibold">${userString || "[Blank]"}</span></p>
+                        <p>Target answer: <span class="font-mono text-emerald-300 font-semibold">${currentTarget.answer}</span></p>
+                    </div>
+                    <p class="text-[10px] md:text-xs text-slate-400 font-sans leading-relaxed">
+                        <strong>Grammar Rule:</strong> ${currentTarget.hint}
+                    </p>
+                `;
+                
+                currentUserStreak = 0;
+                examReadinessPercentage = Math.max(examReadinessPercentage - 2, 0);
+
+                // Add to mistakes log
+                sessionMistakes.push({
+                    prompt: currentTarget.prompt,
+                    correctAnswer: currentTarget.answer,
+                    yourAnswer: userString || "[No Input]",
+                    hint: currentTarget.hint,
+                    type: currentTarget.type
+                });
+            }
+
+            // Add manual Next controls inside feedback panel for faster interaction
+            const nextPanelControls = document.createElement('div');
+            nextPanelControls.className = "flex justify-end pt-2";
+            
+            const skipTimerBtn = document.createElement('button');
+            skipTimerBtn.className = "px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[10px] md:text-xs font-black text-slate-300 cursor-pointer transition-all active:scale-95";
+            skipTimerBtn.innerText = "Next Challenge →";
+            skipTimerBtn.onclick = function() {
+                clearTimeout(autoAdvanceTimer);
+                advanceNextStep();
+            };
+            nextPanelControls.appendChild(skipTimerBtn);
+            hud.appendChild(nextPanelControls);
+
+            // Sync updated tracking parameters to widgets
+            updateDashboardCounters();
+
+            // Auto advance next question after 5 seconds delay
+            autoAdvanceTimer = setTimeout(advanceNextStep, 5000);
+        }
+
+        // Advance index
+        function advanceNextStep() {
+            currentQuestionIndex++;
+            loadActiveQuestionChallenge();
+        }
+
+        // Render exam completion layout dashboard
+        function renderCompletionSummary() {
+            const progressPercent = 100;
+            document.getElementById('session-progress-bar').style.width = `${progressPercent}%`;
+            document.getElementById('question-type-label').innerText = "SESSION COMPLETE";
+            document.getElementById('question-index-label').innerText = "DONE";
+
+            const workspace = document.getElementById('dynamic-prompt-injector');
+            
+            let accuracy = Math.round((sessionScore / currentQuestionsList.length) * 100);
+            let ratingText = "Keep practicing! Review your grammar notes below.";
+            let ratingColor = "text-rose-400";
+            
+            if (accuracy >= 85) {
+                ratingText = "¡Excelente! You are fully prepared to Aprobar the AGS Exam!";
+                ratingColor = "text-emerald-400";
+            } else if (accuracy >= 60) {
+                ratingText = "Good effort! Practice your mistake items to secure a top score.";
+                ratingColor = "text-indigo-400";
+            }
+
+            let summaryHTML = `
+                <div class="text-center py-4 space-y-3">
+                    <h2 class="text-3xl font-black text-indigo-400 tracking-tight">Revision Complete!</h2>
+                    <p class="text-xs md:text-sm text-slate-400">${ratingText}</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto pt-3">
+                        <div class="bg-slate-950/80 p-4 rounded-xl border border-white/5">
+                            <span class="block text-2xl font-black ${ratingColor}">${sessionScore}/${currentQuestionsList.length}</span>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Score</span>
+                        </div>
+                        <div class="bg-slate-950/80 p-4 rounded-xl border border-white/5">
+                            <span class="block text-2xl font-black ${ratingColor}">${accuracy}%</span>
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Accuracy</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Display logged mistakes review
+            if (sessionMistakes.length > 0) {
+                summaryHTML += `
+                    <div class="space-y-3 pt-3">
+                        <h3 class="text-xs font-black tracking-widest text-slate-400 uppercase">Review Session Mistakes (${sessionMistakes.length})</h3>
+                        <div class="space-y-3.5 max-h-[220px] overflow-y-auto pr-1">
+                `;
+                
+                sessionMistakes.forEach((item, index) => {
+                    summaryHTML += `
+                        <div class="bg-slate-950/50 p-3 rounded-lg border border-rose-950/40 text-xs space-y-2">
+                            <div class="flex justify-between items-center text-[10px]">
+                                <span class="font-black text-rose-400 uppercase tracking-wider">${item.type}</span>
+                                <span class="text-slate-500 font-bold">Item #${index + 1}</span>
+                            </div>
+                            <div class="text-slate-300 font-medium leading-relaxed">${item.prompt}</div>
+                            <div class="p-2 bg-slate-950 border border-white/5 rounded space-y-1">
+                                <p class="text-rose-300">Your answer: <span class="font-mono">${item.yourAnswer}</span></p>
+                                <p class="text-emerald-300">Correct answer: <span class="font-mono">${item.correctAnswer}</span></p>
+                            </div>
+                            <p class="text-slate-400 italic"><strong>Rule of Thumb:</strong> ${item.hint}</p>
+                        </div>
+                    `;
+                });
+
+                summaryHTML += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            summaryHTML += `
+                <div class="pt-4 flex gap-3">
+                    <button onclick="restartRevisionSession()" 
+                        class="flex-1 py-3.5 accent-purple hover:accent-purple-hover font-bold text-white rounded-xl transition-all shadow-lg cursor-pointer text-center text-sm active:scale-95">
+                        Start Next Session
+                    </button>
+                </div>
+            `;
+
+            workspace.innerHTML = summaryHTML;
+        }
+
+        // Restart session
+        function restartRevisionSession() {
+            currentQuestionIndex = 0;
+            sessionScore = 0;
+            sessionMistakes = [];
+            
+            // Re-shuffle if in cram mode
+            if (activeExamCramMode) {
+                currentQuestionsList.sort(() => Math.random() - 0.5);
+            }
+            loadActiveQuestionChallenge();
+        }
+
+        // Fire verification controller on load
+        window.onload = initializeExamEngine;
+    </script>
+</body>
+</html>
